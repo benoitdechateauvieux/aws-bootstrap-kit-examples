@@ -5,7 +5,7 @@ import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import * as eventSources from "@aws-cdk/aws-lambda-event-sources";
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
 import * as lambda from '@aws-cdk/aws-lambda-nodejs';
-import * as path from 'path';
+import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import { Auth } from '../common/auth';
 
 interface PostsServiceProps {
@@ -164,5 +164,34 @@ export class PostsService extends cdk.Construct {
 
 
     new cdk.CfnOutput(this, 'apiEndpoint', {value: this.postsApi.url, exportName: 'apiEndpoint'});
+
+    // Create business dashboard
+    const businessDashboard = new cloudwatch.Dashboard(this, "businessDashboard", {
+      dashboardName: "BusinessDashboard",
+    });
+    businessDashboard.addWidgets(createWidget("UploadedPics"), createWidget("Likes"), createWidget("Dislikes"));
+
+    function createWidget(metricName: string) {
+      const metric = new cloudwatch.Metric({
+        metricName,
+        namespace: "UnicornPics",
+        statistic: "SampleCount",
+        period: cdk.Duration.minutes(1),
+        label: "Count"
+      });
+      const mathMetric = new cloudwatch.MathExpression({
+        expression: "FILL(METRICS(), 0)",
+        usingMetrics: { likes: metric },
+        label: "Count"
+      });
+      const widget = new cloudwatch.GraphWidget({
+        title: metricName,
+        view: cloudwatch.GraphWidgetView.TIME_SERIES,
+        liveData: true,
+        left: [mathMetric],
+      });
+      return widget;
+      widget.position
+    }
   }
 }
