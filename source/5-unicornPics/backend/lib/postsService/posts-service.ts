@@ -29,6 +29,9 @@ export class PostsService extends cdk.Construct {
     // Create rest API
     this.postsApi = new apigateway.RestApi(this, "posts-api", {
       restApiName: "Posts Service",
+      deployOptions: {
+        metricsEnabled: true
+      },
       description: "This service manages posts.",
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
