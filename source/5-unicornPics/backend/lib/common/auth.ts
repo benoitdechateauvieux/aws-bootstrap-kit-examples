@@ -26,7 +26,12 @@ export class Auth extends cdk.Construct {
       },
     });
 
-    this.userPoolClient = this.userPool.addClient('activate-app-client');
+    this.userPoolClient = this.userPool.addClient('activate-app-client', {
+      authFlows: {
+        adminUserPassword: true,
+        userSrp: true,
+      }
+    });
 
     new cdk.CfnOutput(this, "UserPoolId", { value: this.userPool.userPoolId, exportName: "UserPoolId" });
     new cdk.CfnOutput(this, "UserPoolClientId", { value: this.userPoolClient.userPoolClientId, exportName: "UserPoolClientId" });
