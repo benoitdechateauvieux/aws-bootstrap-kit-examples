@@ -8,7 +8,7 @@ const CLIENT_ID = process.env.CLIENT_ID!;
 const API_URL = process.env.API_URL!;
 const PICTURE_BUCKET = process.env.PICTURE_BUCKET!;
 const PICTURE_KEY = process.env.PICTURE_KEY!;
-const NUMBER_OF_LIKES_PER_USER = 10;
+const DEFAULT_NUMBER_OF_LIKES_PER_USER = 10;
 const MAX_SLEEP_TIME_MS = 2000;
 
 function randomSleep() {
@@ -16,9 +16,11 @@ function randomSleep() {
 }
 
 export const handler: Handler = async (event) => {
-    const username = event['username'];
-    const password = event['password'];
+    const username = event['UserName'];
+    const numberOfLikesPerUser = event['NumberOfLikesPerUser'] || DEFAULT_NUMBER_OF_LIKES_PER_USER;
+    const password = 'Password1/';
 
+    console.log(event);
     const cognitoIsp = new AWS.CognitoIdentityServiceProvider();
     const params = {
         UserPoolId: USER_POOL_ID,
@@ -85,7 +87,7 @@ export const handler: Handler = async (event) => {
     await randomSleep();
 
     //3- Liking pics
-    for (let i = 0; (i < NUMBER_OF_LIKES_PER_USER && existingPics && existingPics.length > 0); i++) {
+    for (let i = 0; (i < numberOfLikesPerUser && existingPics && existingPics.length > 0); i++) {
         const likedPic = existingPics.splice(Math.floor(Math.random() * existingPics.length), 1);
         const postId = likedPic[0]['postId'];
         const responseLike = await instance.put('/like', {
