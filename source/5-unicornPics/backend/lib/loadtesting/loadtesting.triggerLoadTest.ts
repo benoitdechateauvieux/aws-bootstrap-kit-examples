@@ -8,7 +8,12 @@ const CLIENT_ID = process.env.CLIENT_ID!;
 const API_URL = process.env.API_URL!;
 const PICTURE_BUCKET = process.env.PICTURE_BUCKET!;
 const PICTURE_KEY = process.env.PICTURE_KEY!;
-const NUMBER_OF_LIKES_PER_USER = 10
+const NUMBER_OF_LIKES_PER_USER = 10;
+const MAX_SLEEP_TIME_MS = 2000;
+
+function randomSleep() {
+    return new Promise(resolve => setTimeout(resolve, Math.random() * MAX_SLEEP_TIME_MS));
+}
 
 export const handler: Handler = async (event) => {
     const username = event['username'];
@@ -45,8 +50,12 @@ export const handler: Handler = async (event) => {
         console.log(responseGet);
         throw new Error("Error while getting the list of unicorn pics");
     }
+    const existingPics = responseGet.data;
+    console.log('[' + username + '] Got a list of ' + existingPics.length + ' pics');
+    await randomSleep();
+
     //2- Upload a unicorn pic
-    const responsePrepPost = await instance.put('/preparepost', {user: username}, {
+    const responsePrepPost = await instance.put('/preparepost', { user: username }, {
         baseURL: API_URL,
         headers: apiHeaders,
     });
@@ -61,7 +70,7 @@ export const handler: Handler = async (event) => {
     }).promise();
     const responsePost = await instance.put(postPicUrl, picObject.Body, {
         headers: {
-            'Content-Type': 'image/png' ,
+            'Content-Type': 'image/png',
             'x-amz-meta-userid': responsePrepPost.data['userid'],
             'x-amz-meta-postid': responsePrepPost.data['postid'],
             'x-amz-meta-createdat': responsePrepPost.data['createdat'],
@@ -72,7 +81,29 @@ export const handler: Handler = async (event) => {
         console.log(responsePost);
         throw new Error("Error while posting pic");
     }
-    console.log("Pic uploaded");
+    console.log('[' + username + '] Unicorn pic uploaded');
+    await randomSleep();
+
+    //3- Liking pics
+    for (let i = 0; (i < NUMBER_OF_LIKES_PER_USER && existingPics && existingPics.length > 0); i++) {
+        const likedPic = existingPics.splice(Math.floor(Math.random() * existingPics.length), 1);
+        const postId = likedPic[0]['postId'];
+        const responseLike = await instance.put('/like', {
+            user: username,
+            post: postId,
+        }, {
+            baseURL: API_URL,
+            headers: apiHeaders,
+        });
+        if (responseLike.status != 200) {
+            console.log(responseLike);
+            throw new Error("Error while liking pic with postId " + postId);
+        }
+        console.log('[' + username + '] Unicorn pic liked. PostId=' + postId);
+        await randomSleep();
+    }
+
+    console.log('[' + username + '] End');
     return {
         "statusCode": 200,
     }
