@@ -8,6 +8,8 @@ import * as sfn from '@aws-cdk/aws-stepfunctions';
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
 import * as path from 'path';
 
+const DEFAULT_PASSWORD = 'Password1/';
+
 interface LoadtestingProps {
   userAuth: Auth
   postService: PostsService
@@ -17,11 +19,33 @@ export class Loadtesting extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: LoadtestingProps) {
     super(scope, id);
 
-    //Create lambda functions
+    //Deploy unicorn pic to be uploaded by virtual users
     const unicornPic = new assets.Asset(this, 'UnicornPic', {
       path: path.resolve(__dirname, 'unicorn.png'),
     });
 
+    //Create lambda function - Create User Ids
+    const createUserIds = new lambda.NodejsFunction(this, 'createUserIds');
+
+    //Create lambda function - Create User
+    const createUserRole = new iam.Role(this, 'createUserRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      roleName: "createUserRole"
+    });
+    createUserRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+    createUserRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoPowerUser"));
+
+    const createUsers = new lambda.NodejsFunction(this, 'createUsers', {
+      environment: {
+        USER_POOL_ID: props.userAuth.userPool.userPoolId,
+        CLIENT_ID: props.userAuth.userPoolClient.userPoolClientId,
+        DEFAULT_PASSWORD: DEFAULT_PASSWORD,
+      },
+      role: createUserRole,
+      timeout: cdk.Duration.minutes(5),
+    });
+
+    //Create lambda function - Trigger Load Test
     const triggerLoadTestRole = new iam.Role(this, 'triggerLoadTestRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       roleName: "TriggerLoadTestRole"
@@ -40,12 +64,11 @@ export class Loadtesting extends cdk.Construct {
         API_URL: props.postService.postsApi.url,
         PICTURE_BUCKET: unicornPic.s3BucketName,
         PICTURE_KEY: unicornPic.s3ObjectKey,
+        DEFAULT_PASSWORD: DEFAULT_PASSWORD,
       },
       role: triggerLoadTestRole,
       timeout: cdk.Duration.minutes(5),
     });
-
-    const createUsers = new lambda.NodejsFunction(this, 'createUsers');
 
     //Create stepFunction to coordination load testing steps
     const inputValidationFailed = new sfn.Fail(this, 'Input Validation Failed', {
@@ -53,11 +76,13 @@ export class Loadtesting extends cdk.Construct {
       error: "NumberOfUsers > 1000 OR NumberOfLikesPerUser > 1000",
     });
     const testComplete = new sfn.Pass(this, 'Test Complete');
-    const createTestUsersTask = new tasks.LambdaInvoke(this, 'Create Users', {
-      lambdaFunction: createUsers,
+    const createTestUserIdsTask = new tasks.LambdaInvoke(this, 'Create User Ids', {
+      lambdaFunction: createUserIds,
       inputPath: '$.users',
       outputPath: '$.Payload.userNames',
-      resultPath: '$.createResult',
+    });
+    const createTestUsersTask = new tasks.LambdaInvoke(this, 'Create Users', {
+      lambdaFunction: createUsers,
     });
     const triggerLoadTask = new tasks.LambdaInvoke(this, 'Trigger Load', {
       lambdaFunction: triggerLoadTest,
@@ -71,7 +96,8 @@ export class Loadtesting extends cdk.Construct {
       .when(sfn.Condition.numberGreaterThan('$.users.NumberOfUsers', 1000), inputValidationFailed)
       .when(sfn.Condition.numberGreaterThan('$.users.NumberOfLikesPerUser', 1000), inputValidationFailed)
       .otherwise(
-        createTestUsersTask
+        createTestUserIdsTask
+          .next(createTestUsersTask)
           .next(triggerAllLoadTask)
           .next(testComplete)
       );

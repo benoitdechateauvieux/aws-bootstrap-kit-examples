@@ -10,6 +10,7 @@ const PICTURE_BUCKET = process.env.PICTURE_BUCKET!;
 const PICTURE_KEY = process.env.PICTURE_KEY!;
 const DEFAULT_NUMBER_OF_LIKES_PER_USER = 10;
 const MAX_SLEEP_TIME_MS = 2000;
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD!;
 
 function randomSleep() {
     return new Promise(resolve => setTimeout(resolve, Math.random() * MAX_SLEEP_TIME_MS));
@@ -18,7 +19,6 @@ function randomSleep() {
 export const handler: Handler = async (event) => {
     const username = event['UserName'];
     const numberOfLikesPerUser = event['NumberOfLikesPerUser'] || DEFAULT_NUMBER_OF_LIKES_PER_USER;
-    const password = 'Password1/';
 
     console.log(event);
     const cognitoIsp = new AWS.CognitoIdentityServiceProvider();
@@ -28,7 +28,7 @@ export const handler: Handler = async (event) => {
         ClientId: CLIENT_ID,
         AuthParameters: {
             "USERNAME": username,
-            "PASSWORD": password
+            "PASSWORD": DEFAULT_PASSWORD
         }
     };
     const tokens = await cognitoIsp.adminInitiateAuth(params).promise();
@@ -90,8 +90,9 @@ export const handler: Handler = async (event) => {
     for (let i = 0; (i < numberOfLikesPerUser && existingPics && existingPics.length > 0); i++) {
         const likedPic = existingPics.splice(Math.floor(Math.random() * existingPics.length), 1);
         const postId = likedPic[0]['postId'];
+        const postUser = likedPic[0]['userId'];
         const responseLike = await instance.put('/like', {
-            user: username,
+            user: postUser,
             post: postId,
         }, {
             baseURL: API_URL,
