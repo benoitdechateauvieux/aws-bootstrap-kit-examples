@@ -40,7 +40,7 @@ export class Monitoring extends cdk.Construct {
 
     //API usage
     const apigwSearchMetric = new cloudwatch.MathExpression({
-      expression: "SEARCH('{AWS/ApiGateway,ApiName,Method,Resource,Stage} (Method=\"GET\" OR Method=\"PUT\") AND MetricName=\"Count\"', 'Average', 300)",
+      expression: "SEARCH('{AWS/ApiGateway,ApiName,Method,Resource,Stage} (Method=\"GET\" OR Method=\"PUT\") AND MetricName=\"Count\"', 'SampleCount', 300)",
       usingMetrics: {}, //https://github.com/aws/aws-cdk/issues/7237
     });
     const apigwMathMetric = new cloudwatch.MathExpression({
