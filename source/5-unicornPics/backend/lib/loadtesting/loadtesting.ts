@@ -102,7 +102,8 @@ export class Loadtesting extends cdk.Construct {
           .next(testComplete)
       );
     new sfn.StateMachine(this, 'Load Test StateMachine', {
-      definition: loadtestDefinition
+      definition: loadtestDefinition,
+      stateMachineName:"LoadTest",
     });
 
     //StepFunction to clean up load testing resources
@@ -118,7 +119,8 @@ export class Loadtesting extends cdk.Construct {
       retryOnServiceExceptions: true,
     });
     new sfn.StateMachine(this, 'Clean Up LoadTest StateMachine', {
-      definition: cleanUpTask
+      definition: cleanUpTask,
+      stateMachineName:"LoadTestCleanUp",
     });
   }
 }
