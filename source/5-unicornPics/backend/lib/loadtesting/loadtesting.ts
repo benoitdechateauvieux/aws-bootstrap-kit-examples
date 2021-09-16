@@ -83,6 +83,7 @@ export class Loadtesting extends cdk.Construct {
     });
     const createTestUsersTask = new tasks.LambdaInvoke(this, 'Create Users', {
       lambdaFunction: createUsers,
+      resultPath: sfn.JsonPath.DISCARD,
     });
     const triggerLoadTask = new tasks.LambdaInvoke(this, 'Trigger Load', {
       lambdaFunction: triggerLoadTest,
