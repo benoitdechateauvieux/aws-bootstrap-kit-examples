@@ -2,7 +2,6 @@ import * as AWS from 'aws-sdk';
 import { Handler } from 'aws-lambda';
 
 const CLIENT_ID = process.env.CLIENT_ID!;
-const USER_POOL_ID = process.env.USER_POOL_ID!;
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD!;
 
 export const handler: Handler = async (event) => {
