@@ -1,8 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as lambda from '@aws-cdk/aws-lambda-nodejs';
 import * as iam from '@aws-cdk/aws-iam';
-import { Auth } from '../common/auth';
-import { PostsService } from '../postsService/posts-service';
 import * as assets from '@aws-cdk/aws-s3-assets';
 import * as sfn from '@aws-cdk/aws-stepfunctions';
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
@@ -10,14 +8,14 @@ import * as path from 'path';
 
 const DEFAULT_PASSWORD = 'Password1/';
 
-interface LoadtestingProps {
-  userAuth: Auth
-  postService: PostsService
-}
+export class LoadtestingStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
 
-export class Loadtesting extends cdk.Construct {
-  constructor(scope: cdk.Construct, id: string, props: LoadtestingProps) {
-    super(scope, id);
+    //Import Ids of resources created in UnicornPics stack
+    const userPoolClientId = cdk.Fn.importValue('UserPoolClientId');
+    const userPoolId = cdk.Fn.importValue('UserPoolId');
+    const postsApiUrl = cdk.Fn.importValue('apiEndpoint');
 
     //Deploy unicorn pic to be uploaded by virtual users
     const unicornPic = new assets.Asset(this, 'UnicornPic', {
@@ -38,7 +36,7 @@ export class Loadtesting extends cdk.Construct {
     //Create lambda function - Create User
     const createUsers = new lambda.NodejsFunction(this, 'createUsers', {
       environment: {
-        CLIENT_ID: props.userAuth.userPoolClient.userPoolClientId,
+        CLIENT_ID: userPoolClientId,
         DEFAULT_PASSWORD: DEFAULT_PASSWORD,
       },
       role: lambdaCognitoPowerUserRole,
@@ -59,9 +57,9 @@ export class Loadtesting extends cdk.Construct {
 
     const triggerLoadTest = new lambda.NodejsFunction(this, 'triggerLoadTest', {
       environment: {
-        USER_POOL_ID: props.userAuth.userPool.userPoolId,
-        CLIENT_ID: props.userAuth.userPoolClient.userPoolClientId,
-        API_URL: props.postService.postsApi.url,
+        USER_POOL_ID: userPoolId,
+        CLIENT_ID: userPoolClientId,
+        API_URL: postsApiUrl,
         PICTURE_BUCKET: unicornPic.s3BucketName,
         PICTURE_KEY: unicornPic.s3ObjectKey,
         DEFAULT_PASSWORD: DEFAULT_PASSWORD,
@@ -110,7 +108,7 @@ export class Loadtesting extends cdk.Construct {
     //StepFunction to clean up load testing resources
     const cleanUpUsers = new lambda.NodejsFunction(this, 'cleanUpUsers', {
       environment: {
-        USER_POOL_ID: props.userAuth.userPool.userPoolId,
+        USER_POOL_ID: userPoolId,
       },
       role: lambdaCognitoPowerUserRole,
       timeout: cdk.Duration.minutes(5),

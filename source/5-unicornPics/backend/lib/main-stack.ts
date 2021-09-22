@@ -4,7 +4,6 @@ import { Auth } from './common/auth';
 import { FrontendConfig } from './frontend/frontend-config';
 import { PostsService } from './postsService/posts-service';
 import { Monitoring } from './common/monitoring';
-import { Loadtesting } from './loadtesting/loadtesting';
 
 export class MainStack extends cdk.Stack {
 
@@ -28,11 +27,6 @@ export class MainStack extends cdk.Stack {
     new Monitoring(this, "monitoring", {
       auth: userAuth
     });
-    // create Load Testing tools
-    new Loadtesting(this, "loadtesting", {
-      userAuth: userAuth,
-      postService: postService,
-    })
 
     new FrontendConfig(this, 'frontendConfig', {
       auth: userAuth,
