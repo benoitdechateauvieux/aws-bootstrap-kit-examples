@@ -55,7 +55,7 @@ export class Monitoring extends cdk.Construct {
 
     /* Create API usage custom metric */ 
     const apigwSearchMetric = new cloudwatch.MathExpression({
-      expression: "SEARCH('{AWS/ApiGateway,ApiName,Method,Resource,Stage} (Method=\"GET\" OR Method=\"PUT\") AND MetricName=\"Count\"', 'Average', 300)",
+      expression: "SEARCH('{AWS/ApiGateway,ApiName,Method,Resource,Stage} (Method=\"GET\" OR Method=\"PUT\") AND MetricName=\"Count\"', 'SampleCount', 300)",
       usingMetrics: {}, //https://github.com/aws/aws-cdk/issues/7237
     });
     const apigwMathMetric = new cloudwatch.MathExpression({
@@ -87,7 +87,7 @@ export class Monitoring extends cdk.Construct {
         fillMetrics("Count", { m1: createMetric("UnicornPics", "Dislikes", "Dislikes count", "SampleCount", {})})
       ]),
       createWidget("SignUps", [
-        fillMetrics("Count", { m1: createMetric("UnicornPics", "SignUpSuccesses", "SignUps count", "SampleCount", {UserPool: props.auth.userPool.userPoolId, UserPoolClient: props.auth.userPoolClient.userPoolClientId})})
+        fillMetrics("Count", { m1: createMetric("AWS/Cognito", "SignUpSuccesses", "SignUps count", "SampleCount", {UserPool: props.auth.userPool.userPoolId, UserPoolClient: props.auth.userPoolClient.userPoolClientId})})
       ]),
       apigwWidget
     ); 
