@@ -87,7 +87,7 @@ export class Monitoring extends cdk.Construct {
         fillMetrics("Count", { m1: createMetric("UnicornPics", "Dislikes", "Dislikes count", "SampleCount", {})})
       ]),
       createWidget("SignUps", [
-        fillMetrics("Count", { m1: createMetric("UnicornPics", "SignUpSuccesses", "SignUps count", "SampleCount", {})})
+        fillMetrics("Count", { m1: createMetric("UnicornPics", "SignUpSuccesses", "SignUps count", "SampleCount", {UserPool: props.auth.userPool.userPoolId, UserPoolClient: props.auth.userPoolClient.userPoolClientId})})
       ]),
       apigwWidget
     ); 
