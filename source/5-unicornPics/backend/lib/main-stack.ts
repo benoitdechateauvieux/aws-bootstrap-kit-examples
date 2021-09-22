@@ -25,7 +25,8 @@ export class MainStack extends cdk.Stack {
 
     // create Monitoring dashboards
     new Monitoring(this, "monitoring", {
-      auth: userAuth
+      auth: userAuth,
+      postService: postService,
     });
 
     new FrontendConfig(this, 'frontendConfig', {
