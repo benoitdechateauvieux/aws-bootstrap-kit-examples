@@ -77,50 +77,26 @@ export class Monitoring extends cdk.Construct {
     /* Business dashboard */
     const businessDashboard = new cloudwatch.Dashboard(this, "businessDashboard", {dashboardName: "BusinessDashboard"});
     businessDashboard.addWidgets(
-      createWidget("Uploaded Pics", [
-        fillMetrics("Count", { m1: createMetric("UnicornPics", "UploadedPics", "Uploads count", "SampleCount", {})})
-      ]),
-      createWidget("Likes", [
-        fillMetrics("Count", { m1: createMetric("UnicornPics", "Likes", "Likes count", "SampleCount", {})})
-      ]),
-      createWidget("Dislikes", [
-        fillMetrics("Count", { m1: createMetric("UnicornPics", "Dislikes", "Dislikes count", "SampleCount", {})})
-      ]),
-      createWidget("SignUps", [
-        fillMetrics("Count", { m1: createMetric("AWS/Cognito", "SignUpSuccesses", "SignUps count", "SampleCount", {UserPool: props.auth.userPool.userPoolId, UserPoolClient: props.auth.userPoolClient.userPoolClientId})})
-      ]),
+      createWidget("Uploaded Pics", [createMetric("UnicornPics", "UploadedPics", "Uploads count", "SampleCount", {})]),
+      createWidget("Likes", [createMetric("UnicornPics", "Likes", "Likes count", "SampleCount", {})]),
+      createWidget("Dislikes", [createMetric("UnicornPics", "Dislikes", "Dislikes count", "SampleCount", {})]),
+      createWidget("SignUps", [createMetric("AWS/Cognito", "SignUpSuccesses", "SignUps count", "SampleCount", {UserPool: props.auth.userPool.userPoolId, UserPoolClient: props.auth.userPoolClient.userPoolClientId})]),
       apigwWidget
     ); 
 
     /* Technical dashboard */
     const technicalDashboard = new cloudwatch.Dashboard(this, "technicalDashboard", {dashboardName: "TechnicalDashboard"});
     technicalDashboard.addWidgets(
-      createWidget("Lambda invocations", [
-        fillMetrics("Count", { m1: createMetric("AWS/Lambda", "Invocations", "Invocations count", "SampleCount", {})})
-      ]),
-      createWidget("Lambda errors", [
-        fillMetrics("Count", { m1: createMetric("AWS/Lambda", "Errors", "Errors count", "SampleCount", {})})
-      ]),
-      createWidget("Lambda durations", [
-        fillMetrics("Duration", { m1: createMetric("AWS/Lambda", "Duration", "Executions duration", "Average", {})})
-      ]),      
-      createWidget("Lambda throttles", [
-        fillMetrics("Count", { m1: createMetric("AWS/Lambda", "Throttles", "Throttles count", "SampleCount", {})})
-      ]),
-      createWidget("API Gateway errors", [
-        fillMetrics("Count", { m1: createMetric("AWS/ApiGateway", "5XXError", "Errors count", "SampleCount", {ApiName: "Posts Service"})})
-      ]),
-      createWidget("API Gateway latency", [
-        fillMetrics("Latency", { m1: createMetric("AWS/ApiGateway", "Latency", "Latency average", "Average", {ApiName: "Posts Service"})})
-      ]),
-      createWidget("API Gateway integration latency", [
-        fillMetrics("Latency", { m1: createMetric("AWS/ApiGateway", "IntegrationLatency", "Integration latency average", "Average", {ApiName: "Posts Service"})})
-      ]),
+      createWidget("Lambda invocations", [createMetric("AWS/Lambda", "Invocations", "Invocations count", "SampleCount", {})]),
+      createWidget("Lambda errors", [createMetric("AWS/Lambda", "Errors", "Errors count", "SampleCount", {})]),
+      createWidget("Lambda durations", [createMetric("AWS/Lambda", "Duration", "Executions duration", "Average", {})]),      
+      createWidget("Lambda throttles", [createMetric("AWS/Lambda", "Throttles", "Throttles count", "SampleCount", {})]),
+      createWidget("API Gateway errors", [createMetric("AWS/ApiGateway", "5XXError", "Errors count", "SampleCount", {ApiName: "Posts Service"})]),
+      createWidget("API Gateway latency", [createMetric("AWS/ApiGateway", "Latency", "Latency average", "Average", {ApiName: "Posts Service"})]),
+      createWidget("API Gateway integration latency", [createMetric("AWS/ApiGateway", "IntegrationLatency", "Integration latency average", "Average", {ApiName: "Posts Service"})]),
       createWidget("DynamoDB Capacity Units usage", [
-        fillMetrics("Count", { 
-          m1: createMetric("AWS/DynamoDB", "ConsumedReadCapacityUnits", "Used RCU count", "SampleCount", {TableName: props.postService.table.tableName}),
-          m2: createMetric("AWS/DynamoDB", "ConsumedWriteCapacityUnits", "Used WCU count", "SampleCount", {TableName: props.postService.table.tableName}) 
-        })
+        createMetric("AWS/DynamoDB", "ConsumedReadCapacityUnits", "Used RCU count", "SampleCount", {TableName: props.postService.table.tableName}),
+        createMetric("AWS/DynamoDB", "ConsumedWriteCapacityUnits", "Used WCU count", "SampleCount", {TableName: props.postService.table.tableName}) 
       ]),
     );
   }
