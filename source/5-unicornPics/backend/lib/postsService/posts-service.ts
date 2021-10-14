@@ -4,8 +4,8 @@ import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import * as eventSources from "@aws-cdk/aws-lambda-event-sources";
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
-import * as lambda from '@aws-cdk/aws-lambda-nodejs';
-import * as path from 'path';
+import * as lambdaNode from '@aws-cdk/aws-lambda-nodejs';
+import * as lambda from "@aws-cdk/aws-lambda";
 import { Auth } from '../common/auth';
 
 interface PostsServiceProps {
@@ -16,20 +16,26 @@ interface PostsServiceProps {
 
 export class PostsService extends cdk.Construct {
   public readonly postsApi: apigateway.RestApi;
+  public readonly table: dynamodb.Table;
 
   constructor(scope: cdk.Construct, id: string, props: PostsServiceProps) {
     super(scope, id);
 
     // create dynamodb table
 
-    const table = new dynamodb.Table(this, 'posts', {
+    this.table = new dynamodb.Table(this, 'posts', {
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'postId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
     });
 
     // Create rest API
     this.postsApi = new apigateway.RestApi(this, "posts-api", {
       restApiName: "Posts Service",
+      deployOptions: {
+        metricsEnabled: true,
+        tracingEnabled: true
+      },
       description: "This service manages posts.",
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
@@ -46,10 +52,11 @@ export class PostsService extends cdk.Construct {
     });
 
     // create newPost lambda function
-    const newPost = new lambda.NodejsFunction(this, 'newPost',
-    {
+    const newPost = new lambdaNode.NodejsFunction(this, 'newPost',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
-        POSTS_TABLE_NAME: table.tableName,
+        POSTS_TABLE_NAME: this.table.tableName,
         CLOUDFRONT_DIST: props.activateDistribution.distributionDomainName
       }
     });
@@ -59,10 +66,11 @@ export class PostsService extends cdk.Construct {
     }));
 
     // create getPosts lambda function
-    const getPosts = new lambda.NodejsFunction(this, 'getPosts',
-    {
+    const getPosts = new lambdaNode.NodejsFunction(this, 'getPosts',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
-        POSTS_TABLE_NAME: table.tableName,
+        POSTS_TABLE_NAME: this.table.tableName,
       }
     });
 
@@ -76,10 +84,11 @@ export class PostsService extends cdk.Construct {
     });
 
     // create getPostsById lambda function
-    const getPostsById = new lambda.NodejsFunction(this, 'getPostsById',
-    {
+    const getPostsById = new lambdaNode.NodejsFunction(this, 'getPostsById',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
-        POSTS_TABLE_NAME: table.tableName,
+        POSTS_TABLE_NAME: this.table.tableName,
       }
     });
 
@@ -95,10 +104,11 @@ export class PostsService extends cdk.Construct {
     });
 
     // create likePost lambda function
-    const likePost = new lambda.NodejsFunction(this, 'likePost',
-    {
+    const likePost = new lambdaNode.NodejsFunction(this, 'likePost',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
-        POSTS_TABLE_NAME: table.tableName,
+        POSTS_TABLE_NAME: this.table.tableName,
       }
     });
 
@@ -113,10 +123,11 @@ export class PostsService extends cdk.Construct {
     });
 
     // create dislikePost lambda function
-    const dislikePost = new lambda.NodejsFunction(this, 'dislikePost',
-    {
+    const dislikePost = new lambdaNode.NodejsFunction(this, 'dislikePost',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
-        POSTS_TABLE_NAME: table.tableName,
+        POSTS_TABLE_NAME: this.table.tableName,
       }
     });
 
@@ -131,8 +142,9 @@ export class PostsService extends cdk.Construct {
     });
 
     // Add prepare post method
-    const preparePost = new lambda.NodejsFunction(this, 'preparePost',
-    {
+    const preparePost = new lambdaNode.NodejsFunction(this, 'preparePost',
+    {        
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
         POST_BUCKET_NAME: props.activateBucket.bucketName
       }
@@ -151,13 +163,13 @@ export class PostsService extends cdk.Construct {
     });
 
     // Grant read/write permissions to lambda
-    table.grantWriteData(getPosts);
-    table.grantReadData(getPosts);
-    table.grantWriteData(getPostsById);
-    table.grantReadData(getPostsById);
-    table.grantWriteData(likePost);
-    table.grantWriteData(dislikePost);
-    table.grantWriteData(newPost);
+    this.table.grantWriteData(getPosts);
+    this.table.grantReadData(getPosts);
+    this.table.grantWriteData(getPostsById);
+    this.table.grantReadData(getPostsById);
+    this.table.grantWriteData(likePost);
+    this.table.grantWriteData(dislikePost);
+    this.table.grantWriteData(newPost);
 
     // Grant read permission to lambda
     props.activateBucket.grantRead(newPost);
